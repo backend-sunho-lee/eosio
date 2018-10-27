@@ -1,24 +1,25 @@
 /**
  * @author sunny lee
- * @date 2018-08-29
- * @version eosio-v1.2
+ * @date 2018-10-27
+ * @version eosio-v1.3
  */
 #include <eosiolib/asset.hpp>
 #include <eosiolib/eosio.hpp>
-//#include <eosio.token/eosio.token.hpp>
 #include <string>
 using namespace eosio;
 
-class apple : public contract {
+class banana : public eosio::contract {
     public:
-        apple( account_name self ):contract(self),_accounts(_self, _self),_act_rcrd(_self, _self){}
+        using contract::contract;
 
+        [[eosio::action]]
         void issue( account_name to, eosio::asset quantity, std::string memo ) {
             //require_auth( _self );
             add_balance( _self, to, quantity );
             record_actions( N(issue),  _self, to, quantity, memo );
         }
 
+        [[eosio::action]]
         void transfer( account_name from, account_name to, eosio::asset quantity, std::string memo ){
             require_auth( from );
             require_recipient( from );
@@ -29,6 +30,7 @@ class apple : public contract {
             record_actions( N(transfer), from, to, quantity, memo );
         }
 
+        [[eosio::action]]
         void getbalance( account_name owner ) {
             auto acnt = _accounts.get( owner );
             auto acnt_obj = name{acnt.owner};
@@ -40,23 +42,20 @@ class apple : public contract {
 
     private:
 
-        /// @abi table accounts
-        struct account {
+        struct [[eosio::table]] account {
             account_name    owner;
             eosio::asset    balance;
 
             uint64_t primary_key()const { return owner; }
         };
 
-        /// @abi table actions
-        struct action_record {
+        struct [[eosio::table]] action_record {
             uint64_t        id;
             uint64_t        action_type;
             account_name    from;
             account_name    to;
             eosio::asset    balance;
             std::string     memo;
-            time            create_time;
 
             uint64_t primary_key()const { return id; }
         };
@@ -94,9 +93,9 @@ class apple : public contract {
                 a.balance = quantity;
                 a.action_type = action_type;
                 a.memo = memo;
-                a.create_time = now();
             });
         }
 };
 
-EOSIO_ABI( apple, (issue)(transfer)(getbalance) )
+EOSIO_DISPATCH( eosio::token, (issue)(transfer)(getbalance) )
+
